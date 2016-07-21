@@ -1,0 +1,64 @@
+---
+title: "LiveSessionAssignmentUnit9"
+author: "Earl Shaw"
+date: "July 20, 2016"
+output: html_document
+---
+
+```{r main, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+##Purpose
+#This RMarkdown document is designed to analyze the Exxon Mobil stock (XOM). Analysis includes a calculation of log returns, a single volatility measure and a volatility measure with three different decay factors, along with plots illustrating varying degrees of volatility, given the decay changes.
+
+#Loading the "tseries" package which is designed to assist with analytic research and forecasts associated with time series data.
+#install.packages("tseries")
+library(tseries)
+
+##Getting SessionInfo for run
+sessionInfo()
+
+#Downloading historical close prices for XOM. Historical prices are taken from www.yahoo.com and represent the daily closing price. The date range of the data is from January 1, 1995 to December 31, 2015.
+xom<-get.hist.quote(instrument="xom",start="1995-01-01",end="2015-12-31",quote="Close","yahoo")
+#Determining the length of the data set along with summary stats. The data set contains 5,288 records.
+length(xom)
+summary(xom)
+
+#Determining the natural log returns of the time series
+xom_returns<-log(lag(xom))-log(xom)
+#Determing the length of the log returns data set along with summary stats. It contains 5,287 records.
+length(xom_returns)
+summary(xom_returns)
+
+#Determining volatility of the log returns. There are approximately 250 trading days in a year on average, so 250 is used in determining annual volatility.
+xom_vol<-sd(xom_returns)*sqrt(250)*100
+#Printing volatility --> Volatility for the XOM stock is 32%, which means that in about one year, the price of XOM stock will have fallen/risen by ~32% from its current price.
+xom_vol
+
+#Determining volatility over a continuous lookback window to see what it looks like over time.
+# The function "vol" is created to determine volatility over the lookback window.
+vol<-function(d,logrets) {
+var=0
+lam=0
+varlist<-c()
+for (r in logrets) {
+lam=lam*(1-1/d)+1
+var=(1-1/lam)*var+(1/lam)*r^2
+varlist<-c(varlist,var)}
+sqrt(varlist)}
+#Determining volatility for three different weights/deceay factors.
+est_vol_xom1<-vol(10,xom_returns)
+est_vol_xom2<-vol(30,xom_returns)
+est_vol_xom3<-vol(100,xom_returns)
+```
+
+## Including Plots
+```{r plots, echo=TRUE}
+## Plot of volatility over the lookback window with weight=0.9.
+plot(est_vol_xom1,type="l")
+## Plot of volatility over the lookback window with weight=0.96.
+lines(est_vol_xom2,type="l",col="red")
+## Plot of volatility over the lookback window with weight=0.99.
+lines(est_vol_xom3,type="l",col="blue")
+
+#Conclusion: The Exxon-Mobil stock has experienced several wild swings in price over the past 20 years, which can be seen in the provided plots of volatility for the stock. The increasing weights appear to smooth out the volatiliity such that it doesn't appear as severe as it did initially. 
+```
